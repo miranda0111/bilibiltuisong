@@ -34,7 +34,7 @@ jobs:
         pip install requests
     - name: running checnIn
       run: |
-        python checkin.py
+        python biliiii.py
       env:
         PUSHPLUS: ${{ secrets.PUSHPLUS }}
         COOKIES: ${{ secrets.COOKIES }}
