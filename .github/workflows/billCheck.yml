@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    name: WIEBO checkin
+    name: billld
     runs-on: ubuntu-latest
     strategy:
       matrix:
