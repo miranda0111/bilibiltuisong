@@ -147,6 +147,7 @@ if __name__ == '__main__':
 
     # 4. 构建推送内容
     content = build_push_content(items)
+    print(content)
     title = "B站动态更新提醒"
 
     # 5. 遍历所有 bark_key 推送

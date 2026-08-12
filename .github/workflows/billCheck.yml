@@ -9,34 +9,27 @@ on:
       - 'imgs/'
   schedule:
     - cron: '*/15 1-7 * * *'
-  watch:
-    types: started
+# watch:
+#   types: [started]  # 不需要建议注释掉，star触发浪费额度
 
 jobs:
   build:
-    name: billld
+    name: build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.8]
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
+      # 直接使用系统自带python3，移除setup‑python，省去版本拉取/解压步骤，最快启动
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install requests
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
-    - name: running checnIn
-      run: |
-        python biliiii.py
-      env:
-        PUSHPLUS: ${{ secrets.PUSHPLUS }}
-        COOKIES: ${{ secrets.COOKIES }}
-        CH_IDS: ${{ secrets.CH_IDS }}
-        WEIBODATAS: ${{ secrets.WEIBODATAS }}
+      - name: running checkIn
+        run: python3 biliiii.py
+        env:
+          PUSHPLUS: ${{ secrets.PUSHPLUS }}
+          COOKIES: ${{ secrets.COOKIES }}
+          CH_IDS: ${{ secrets.CH_IDS }}
+          WEIBODATAS: ${{ secrets.WEIBODATAS }}
