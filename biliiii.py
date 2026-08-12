@@ -155,7 +155,7 @@ if __name__ == '__main__':
     # 1. 获取 Bark 密钥（支持多个，用 & 分隔）
     bark_keys_env = os.environ.get("BARK_KEY", "")
     if not bark_keys_env:
-        bark_keys_env = "UuYcY5XvAJD2tVkavzeeTd"
+        bark_keys_env = ""
     bark_keys = bark_keys_env.split("&")
     bark_keys = [k.strip() for k in bark_keys if k.strip()]
     if not bark_keys:
