@@ -3,7 +3,7 @@ import sys
 import requests
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # 动态类型友好名称映射
 type_map = {
@@ -21,18 +21,19 @@ def get_dynamic_title(item):
     """
     major = item.get("modules", {}).get("module_dynamic", {}).get("major")
     if not major:
-        return ""
+        desc = item.get("modules", {}).get("module_dynamic", {}).get("desc", {})
+        return desc.get("text", "") if desc else ""
 
     major_type = major.get("type")
     if major_type == "MAJOR_TYPE_ARCHIVE":      # 视频投稿
         archive = major.get("archive", {})
         return archive.get("title", "")
     elif major_type == "MAJOR_TYPE_DRAW":       # 图文动态
-        desc = item.get("modules", {}).get("module_dynamic", {}).get("desc")
-        return desc if desc else ""
+        desc = item.get("modules", {}).get("module_dynamic", {}).get("desc", {})
+        return desc.get("text", "") if desc else ""
     elif major_type == "MAJOR_TYPE_WORD":       # 纯文字动态
-        desc = item.get("modules", {}).get("module_dynamic", {}).get("desc")
-        return desc if desc else ""
+        desc = item.get("modules", {}).get("module_dynamic", {}).get("desc", {})
+        return desc.get("text", "") if desc else ""
     elif major_type == "MAJOR_TYPE_ARTICLE":    # 专栏文章
         article = major.get("article", {})
         return article.get("title", "")
@@ -43,8 +44,31 @@ def get_dynamic_title(item):
         else:
             return "转发动态"
     else:
-        desc = item.get("modules", {}).get("module_dynamic", {}).get("desc")
-        return desc if desc else ""
+        desc = item.get("modules", {}).get("module_dynamic", {}).get("desc", {})
+        return desc.get("text", "") if desc else ""
+
+def get_publish_datetime(item):
+    """获取动态发布时间datetime对象，用于时间过滤"""
+    module_author = item.get("modules", {}).get("module_author", {})
+    pub_ts = module_author.get("pub_ts")
+    try:
+        # 时间戳转datetime
+        ts = int(pub_ts)
+        return datetime.fromtimestamp(ts)
+    except (ValueError, TypeError):
+        return None
+
+def filter_half_hour_dynamics(item_list):
+    """过滤出近30分钟内发布的动态"""
+    now = datetime.now()
+    limit_time = now - timedelta(minutes=30)
+    valid_list = []
+    for item in item_list:
+        pub_dt = get_publish_datetime(item)
+        # 时间解析成功 且 发布时间在30分钟内
+        if pub_dt is not None and pub_dt >= limit_time:
+            valid_list.append(item)
+    return valid_list
 
 def fetch_up_dynamics(uid, offset="", page=1):
     """
@@ -76,17 +100,18 @@ def fetch_up_dynamics(uid, offset="", page=1):
 
 def build_push_content(items):
     """
-    将动态列表整理为推送内容字符串
+    将动态列表整理为推送内容字符串（保留你原有输出格式）
     """
     if not items:
-        return "未获取到动态"
+        return ""
 
     lines = []
-    for idx, item in enumerate(items[:10], 1):  # 最多取前10条
+    for idx, item in enumerate(items, 1):
         dyn_id = item.get("id_str", "")
         dyn_type = item.get("type", "")
         type_name = type_map.get(dyn_type, dyn_type)
-        pub_time = item.get("modules", {}).get("module_author", {}).get("pub_time", "")
+        # 前端显示的相对时间（刚刚/16分钟前）
+        pub_time_text = item.get("modules", {}).get("module_author", {}).get("pub_time", "")
         author = item.get("modules", {}).get("module_author", {}).get("name", "")
         title = get_dynamic_title(item)
         link = f"https://t.bilibili.com/{dyn_id}" if dyn_id else ""
@@ -96,20 +121,21 @@ def build_push_content(items):
             line += f" - {title}"
         if author:
             line += f" (by {author})"
-        if pub_time:
-            line += f" {pub_time}"
+        if pub_time_text:
+            line += f" {pub_time_text}"
         if link:
             line += f" 链接：{link}"
         lines.append(line)
+        print(lines)
 
     return "\n".join(lines)
 
 def bark_push(bark_key, title, content):
-    if not bark_key:
+    if not bark_key or not content.strip():
         return False
     url = "https://api.day.app/push"
     payload = {
-        "device_key": bark_key,   # 根据错误提示尝试修改字段名
+        "device_key": bark_key,
         "title": title,
         "body": content,
         "sound": "default"
@@ -124,42 +150,47 @@ def bark_push(bark_key, title, content):
     except Exception as e:
         print(f"Bark 推送异常：{e}")
         return False
+
 if __name__ == '__main__':
     # 1. 获取 Bark 密钥（支持多个，用 & 分隔）
     bark_keys_env = os.environ.get("BARK_KEY", "")
-    # 如果环境变量未设置，则使用硬编码测试密钥（请替换为您自己的）
     if not bark_keys_env:
-        bark_keys_env = "UuYcY5XvAJD2tVkavzeeTd"   # 请替换为真实密钥
+        bark_keys_env = "UuYcY5XvAJD2tVkavzeeTd"
     bark_keys = bark_keys_env.split("&")
-    if not bark_keys or bark_keys[0] == "":
+    bark_keys = [k.strip() for k in bark_keys if k.strip()]
+    if not bark_keys:
         print('未获取到 BARK_KEY 变量，请在环境变量中配置')
         sys.exit(0)
 
     # 2. 获取 B 站 UID
     bili_uid = os.environ.get("BILI_UID", "194084427")
 
-    # 3. 获取动态
+    # 3. 获取全部动态
     print(f"正在获取 UID {bili_uid} 的动态...")
-    items = fetch_up_dynamics(bili_uid)
-    if not items:
+    all_items = fetch_up_dynamics(bili_uid)
+    if not all_items:
         print("没有获取到动态数据")
         sys.exit(0)
 
-    # 4. 构建推送内容
-    content = build_push_content(items)
-    print(content)
-    title = "B站动态更新提醒"
+    # 4. 过滤仅保留30分钟内动态
+    recent_items = filter_half_hour_dynamics(all_items)
+    if not recent_items:
+        print("近30分钟无新动态，不推送通知")
+        sys.exit(0)
 
-    # 5. 遍历所有 bark_key 推送
+    # 5. 构建推送内容（和你原输出格式完全一致）
+    content = build_push_content(recent_items)
+    title = "B站动态更新提醒"
+    full_msg = f"{title}\n\n{content}"
+    print(full_msg)
+
+    # 6. 遍历所有 bark_key 推送
     success_count = 0
     fail_count = 0
     for key in bark_keys:
-        key = key.strip()
-        if not key:
-            continue
         if bark_push(key, title, content):
             success_count += 1
         else:
             fail_count += 1
 
-    print(f"推送完成，成功：{success_count}，失败：{fail_count}")
+    print(f"\n推送完成，成功：{success_count}，失败：{fail_count}")
