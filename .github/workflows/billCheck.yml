@@ -30,7 +30,7 @@ jobs:
       - name: running checkIn
         run: python3 biliiii.py
         env:
-          PUSHPLUS: ${{ secrets.PUSHPLUS }}
+          BARK_KEY: ${{ secrets.BARK_KEY }}
           COOKIES: ${{ secrets.COOKIES }}
-          CH_IDS: ${{ secrets.CH_IDS }}
-          WEIBODATAS: ${{ secrets.WEIBODATAS }}
+          BILI_UID: ${{ secrets.BILI_UID }}
+  
