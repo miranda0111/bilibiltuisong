@@ -70,7 +70,7 @@ def filter_half_hour_dynamics(item_list):
             valid_list.append(item)
     return valid_list
 
-def fetch_up_dynamics(uid, offset="", page1):
+def fetch_up_dynamics(uid, offset="", page=1):
     """
     请求 B 站空间动态接口，返回 items 列表
     """
