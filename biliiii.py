@@ -70,7 +70,7 @@ def filter_half_hour_dynamics(item_list):
             valid_list.append(item)
     return valid_list
 
-def fetch_up_dynamics(uid, offset="", page=-480):
+def fetch_up_dynamics(uid, offset="", page1):
     """
     请求 B 站空间动态接口，返回 items 列表
     """
@@ -78,7 +78,7 @@ def fetch_up_dynamics(uid, offset="", page=-480):
     params = {
         "host_mid": uid,
         "offset": offset,
-        "timezone_offset": page
+        "page": page
     }
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
