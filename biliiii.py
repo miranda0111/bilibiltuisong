@@ -82,7 +82,7 @@ def fetch_up_dynamics(uid, offset="", page1):
     }
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
-        "Cookie": "x-bili-gaia-vtoken=27e005cf450f45f08cfef5dec54e8a88;__at_once=790639169643703281;_uuid=B341674B-8CB3-D7B9-39D1-236862F6D88994626infoc;buvid_fp=e644e7892a75616bd6abed9eeacc6290;bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODcwNjI1MTIsImlhdCI6MTc4NjgwMzI1MiwicGx0IjotMX0.NllcKaoP7df-Xyle20O2l8OxbmKHXxYEqcKReXFeMGk;bili_ticket_expires=1787062452;buvid4=7152BCBA-018F-19F5-FB41-0B9C21FF879994744-126081522-fNd9TCZgBDMEZanxa7ivfw%3D%3D;b_nut=1786803293;buvid3=713A1A26-4F5E-F548-218B-A3E696FE317E93470infoc;b_lsid=65D6C30C_1A005C71599;",
+        "Cookie": "__at_once=790639169643703281;_uuid=B341674B-8CB3-D7B9-39D1-236862F6D88994626infoc;buvid_fp=e644e7892a75616bd6abed9eeacc6290;bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODcwNjI1MTIsImlhdCI6MTc4NjgwMzI1MiwicGx0IjotMX0.NllcKaoP7df-Xyle20O2l8OxbmKHXxYEqcKReXFeMGk;bili_ticket_expires=1787062452;buvid4=7152BCBA-018F-19F5-FB41-0B9C21FF879994744-126081522-fNd9TCZgBDMEZanxa7ivfw%3D%3D;b_nut=1786803293;buvid3=713A1A26-4F5E-F548-218B-A3E696FE317E93470infoc;b_lsid=65D6C30C_1A005C71599;",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
     }
     try:
