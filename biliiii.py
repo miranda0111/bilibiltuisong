@@ -70,7 +70,7 @@ def filter_half_hour_dynamics(item_list):
             valid_list.append(item)
     return valid_list
 
-def fetch_up_dynamics(uid, offset="", page=1):
+def fetch_up_dynamics(uid, Cookies, offset="", page=1):
     """
     请求 B 站空间动态接口，返回 items 列表
     """
@@ -82,7 +82,7 @@ def fetch_up_dynamics(uid, offset="", page=1):
     }
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
-        "Cookie": "__at_once=790639169643703281;_uuid=B341674B-8CB3-D7B9-39D1-236862F6D88994626infoc;buvid_fp=e644e7892a75616bd6abed9eeacc6290;bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODcwNjI1MTIsImlhdCI6MTc4NjgwMzI1MiwicGx0IjotMX0.NllcKaoP7df-Xyle20O2l8OxbmKHXxYEqcKReXFeMGk;bili_ticket_expires=1787062452;buvid4=7152BCBA-018F-19F5-FB41-0B9C21FF879994744-126081522-fNd9TCZgBDMEZanxa7ivfw%3D%3D;b_nut=1786803293;buvid3=713A1A26-4F5E-F548-218B-A3E696FE317E93470infoc;b_lsid=65D6C30C_1A005C71599;",
+        "Cookie": Cookies,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
     }
     try:
@@ -164,10 +164,19 @@ if __name__ == '__main__':
 
     # 2. 获取 B 站 UID
     bili_uid = os.environ.get("BILI_UID", "194084427")
+    
+    Cookies_env = os.environ.get("COOKIES", "")
+    if not Cookies_env:
+        Cookies_env = ""
+    Cookies = Cookies_env.split("&") #单个，不用做多账户循环
+    Cookies = [k.strip() for k in Cookies if k.strip()]
+    if not Cookies:
+        print('未获取到 COOKIES 变量，请在环境变量中配置')
+        sys.exit(0)
 
     # 3. 获取全部动态
     print(f"正在获取 UID {bili_uid} 的动态...")
-    all_items = fetch_up_dynamics(bili_uid)
+    all_items = fetch_up_dynamics(bili_uid, Cookies)
     if not all_items:
         print("没有获取到动态数据")
         sys.exit(0)
