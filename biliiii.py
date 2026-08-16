@@ -166,17 +166,17 @@ if __name__ == '__main__':
     bili_uid = os.environ.get("BILI_UID", "194084427")
     
     Cookies_env = os.environ.get("COOKIES", "")
-    if not Cookies_env:
-        Cookies_env = ""
-    Cookies = Cookies_env.split("&") #单个，不用做多账户循环
-    Cookies = [k.strip() for k in Cookies if k.strip()]
-    if not Cookies:
-        print('未获取到 COOKIES 变量，请在环境变量中配置')
-        sys.exit(0)
+    # if not Cookies_env:
+    #     Cookies_env = ""
+    # Cookies = Cookies_env.split("&") #单个，不用做多账户循环
+    # Cookies = [k.strip() for k in Cookies if k.strip()]
+    # if not Cookies:
+    #     print('未获取到 COOKIES 变量，请在环境变量中配置')
+    #     sys.exit(0)
 
     # 3. 获取全部动态
     print(f"正在获取 UID {bili_uid} 的动态...")
-    all_items = fetch_up_dynamics(bili_uid, Cookies)
+    all_items = fetch_up_dynamics(bili_uid, Cookies_env)
     if not all_items:
         print("没有获取到动态数据")
         sys.exit(0)
