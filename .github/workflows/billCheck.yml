@@ -9,7 +9,7 @@ on:
       - 'README.md'
       - 'imgs/'
   schedule:
-    - cron: '3,24,42 * * * *'
+    - cron: '39 * * * *'
 # watch:
 #   types: [started]  # 不需要建议注释掉，star触发浪费额度
 
