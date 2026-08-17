@@ -25,7 +25,7 @@ def get_dynamic_title(item):
         return desc.get("text", "") if desc else ""
 
     major_type = major.get("type")
-    if major_type == "MAJOR_TYPE_ARCHIVE":      # 视频投稿
+    if major_type == "MAJOR_TYPE_ARCHIVE":      # 视频投稿1
         archive = major.get("archive", {})
         return archive.get("title", "")
     elif major_type == "MAJOR_TYPE_DRAW":       # 图文动态
