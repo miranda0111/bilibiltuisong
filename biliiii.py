@@ -164,31 +164,49 @@ if __name__ == '__main__':
 
     # 2. 获取 B 站 UID
     bili_uid = os.environ.get("BILI_UID", "194084427")
-    
+    # 2. 多个UID，环境变量用英文逗号分隔 BILI_UID=uid1&uid2&uid3
+    bili_uid_env = os.environ.get("BILI_UID", "")
+    uid_list = bili_uid_env.split("&")
+    uid_list = [u.strip() for u in uid_list if u.strip()]
+    if not uid_list:
+        print("未配置 BILI_UID，多个UID用英文逗号分隔")
+        sys.exit(0)
+        
     Cookies_env = os.environ.get("COOKIES", "")
-    # if not Cookies_env:
-    #     Cookies_env = ""
-    # Cookies = Cookies_env.split("&") #单个，不用做多账户循环
-    # Cookies = [k.strip() for k in Cookies if k.strip()]
-    # if not Cookies:
-    #     print('未获取到 COOKIES 变量，请在环境变量中配置')
-    #     sys.exit(0)
 
     # 3. 获取全部动态
-    print(f"正在获取 UID {bili_uid} 的动态...")
-    all_items = fetch_up_dynamics(bili_uid, Cookies_env)
-    if not all_items:
-        print("没有获取到动态数据")
+    # print(f"正在获取 UID {bili_uid} 的动态...")
+    # all_items = fetch_up_dynamics(bili_uid, Cookies_env)
+    # if not all_items:
+    #     print("没有获取到动态数据")
+    #     sys.exit(0)
+    all_recent_items = []
+    for uid in uid_list:
+        print(f"\n===== 正在获取 UID {uid} 的动态 =====")
+        up_items = fetch_up_dynamics(uid, Cookies_env)
+        if not up_items:
+            print(f"UID {uid} 未获取到动态")
+            continue
+        # 过滤30分钟内动态
+        recent = filter_half_hour_dynamics(up_items)
+        if recent:
+            print(f"UID {uid} 抓到 {len(recent)} 条近30分钟动态")
+            all_recent_items.extend(recent)
+        else:
+            print(f"UID {uid} 近30分钟无新动态")
+    
+    if not all_recent_items:
+        print("\n所有UP主近30分钟均无新动态，不推送")
         sys.exit(0)
-
     # 4. 过滤仅保留30分钟内动态
-    recent_items = filter_half_hour_dynamics(all_items)
-    if not recent_items:
-        print("近30分钟无新动态，不推送通知")
-        sys.exit(0)
+    # recent_items = filter_half_hour_dynamics(all_items)
+    # if not recent_items:
+    #     print("近30分钟无新动态，不推送通知")
+    #     sys.exit(0)
 
     # 5. 构建推送内容（和你原输出格式完全一致）
-    content = build_push_content(recent_items)
+    # content = build_push_content(recent_items)
+    content = build_push_content(all_recent_items)
     title = "B站动态更新提醒"
     full_msg = f"{title}\n\n{content}"
     print(full_msg)
