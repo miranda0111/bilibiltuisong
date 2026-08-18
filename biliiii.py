@@ -3,6 +3,7 @@ import sys
 import requests
 import json
 import time
+import random
 from datetime import datetime, timedelta
 
 # 动态类型友好名称映射
@@ -14,6 +15,7 @@ type_map = {
     "DYNAMIC_TYPE_FORWARD": "转发动态"
 }
 
+
 def get_dynamic_title(item):
     """
     从单个动态数据中提取标题/描述文本
@@ -23,7 +25,6 @@ def get_dynamic_title(item):
     if not major:
         desc = item.get("modules", {}).get("module_dynamic", {}).get("desc", {})
         return desc.get("text", "") if desc else ""
-
     major_type = major.get("type")
     if major_type == "MAJOR_TYPE_ARCHIVE":      # 视频投稿1
         archive = major.get("archive", {})
@@ -47,6 +48,7 @@ def get_dynamic_title(item):
         desc = item.get("modules", {}).get("module_dynamic", {}).get("desc", {})
         return desc.get("text", "") if desc else ""
 
+
 def get_publish_datetime(item):
     """获取动态发布时间datetime对象，用于时间过滤"""
     module_author = item.get("modules", {}).get("module_author", {})
@@ -57,6 +59,7 @@ def get_publish_datetime(item):
         return datetime.fromtimestamp(ts)
     except (ValueError, TypeError):
         return None
+
 
 def filter_half_hour_dynamics(item_list):
     """过滤出近30分钟内发布的动态"""
@@ -70,9 +73,10 @@ def filter_half_hour_dynamics(item_list):
             valid_list.append(item)
     return valid_list
 
-def fetch_up_dynamics(uid, Cookies, offset="", page=1):
+
+def fetch_up_dynamics(uid, Cookies, offset="", page=1, max_retry=3):
     """
-    请求 B 站空间动态接口，返回 items 列表
+    请求 B 站空间动态接口，增加重试机制，返回 items 列表
     """
     api_url = "https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space"
     params = {
@@ -85,18 +89,24 @@ def fetch_up_dynamics(uid, Cookies, offset="", page=1):
         "Cookie": Cookies,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
     }
-    try:
-        resp = requests.get(api_url, params=params, headers=headers, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        if data.get("code") != 0:
-            print(f"API 返回错误：{data.get('message')}")
-            return []
-        items = data.get("data", {}).get("items", [])
-        return items
-    except Exception as e:
-        print(f"请求动态失败：{e}")
-        return []
+
+    for retry in range(max_retry):
+        try:
+            resp = requests.get(api_url, params=params, headers=headers, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            if data.get("code") != 0:
+                print(f"API 返回错误：{data.get('message')}，重试 {retry+1}/{max_retry}")
+                time.sleep(2)
+                continue
+            items = data.get("data", {}).get("items", [])
+            return items
+        except Exception as e:
+            print(f"请求动态失败：{e}，重试 {retry+1}/{max_retry}")
+            time.sleep(2)
+    print(f"UID {uid} 已达到最大重试次数，放弃获取")
+    return []
+
 
 def build_push_content(items):
     """
@@ -104,7 +114,6 @@ def build_push_content(items):
     """
     if not items:
         return ""
-
     lines = []
     for idx, item in enumerate(items, 1):
         dyn_id = item.get("id_str", "")
@@ -115,7 +124,6 @@ def build_push_content(items):
         author = item.get("modules", {}).get("module_author", {}).get("name", "")
         title = get_dynamic_title(item)
         link = f"https://t.bilibili.com/{dyn_id}" if dyn_id else ""
-
         line = f"{idx}. {type_name}"
         if title:
             line += f" - {title}"
@@ -126,9 +134,8 @@ def build_push_content(items):
         if link:
             line += f" 链接：{link}"
         lines.append(line)
-        print(lines)
-
     return "\n".join(lines)
+
 
 def bark_push(bark_key, title, content):
     if not bark_key or not content.strip():
@@ -151,38 +158,34 @@ def bark_push(bark_key, title, content):
         print(f"Bark 推送异常：{e}")
         return False
 
+
 if __name__ == '__main__':
     # 1. 获取 Bark 密钥（支持多个，用 & 分隔）
     bark_keys_env = os.environ.get("BARK_KEY", "")
-    if not bark_keys_env:
-        bark_keys_env = ""
     bark_keys = bark_keys_env.split("&")
     bark_keys = [k.strip() for k in bark_keys if k.strip()]
     if not bark_keys:
         print('未获取到 BARK_KEY 变量，请在环境变量中配置')
         sys.exit(0)
 
-    # 2. 获取 B 站 UID
-    bili_uid = os.environ.get("BILI_UID", "194084427")
-    # 2. 多个UID，环境变量用英文逗号分隔 BILI_UID=uid1&uid2&uid3
+    # 2. 多个UID，环境变量用英文&分隔 BILI_UID=uid1&uid2&uid3
     bili_uid_env = os.environ.get("BILI_UID", "")
     uid_list = bili_uid_env.split("&")
     uid_list = [u.strip() for u in uid_list if u.strip()]
     if not uid_list:
-        print("未配置 BILI_UID，多个UID用英文逗号分隔")
+        print("未配置 BILI_UID，多个UID用英文&分隔")
         sys.exit(0)
-        
+
     Cookies_env = os.environ.get("COOKIES", "")
 
-    # 3. 获取全部动态
-    # print(f"正在获取 UID {bili_uid} 的动态...")
-    # all_items = fetch_up_dynamics(bili_uid, Cookies_env)
-    # if not all_items:
-    #     print("没有获取到动态数据")
-    #     sys.exit(0)
     all_recent_items = []
     for uid in uid_list:
         print(f"\n===== 正在获取 UID {uid} 的动态 =====")
+        # 每个UID请求前随机等待 1.5 ~ 4秒，防止请求频率过高
+        sleep_sec = random.uniform(1.5, 5.0)
+        print(f"随机等待 {sleep_sec:.2f}s ...")
+        time.sleep(sleep_sec)
+
         up_items = fetch_up_dynamics(uid, Cookies_env)
         if not up_items:
             print(f"UID {uid} 未获取到动态")
@@ -194,24 +197,17 @@ if __name__ == '__main__':
             all_recent_items.extend(recent)
         else:
             print(f"UID {uid} 近30分钟无新动态")
-    
+
     if not all_recent_items:
         print("\n所有UP主近30分钟均无新动态，不推送")
         sys.exit(0)
-    # 4. 过滤仅保留30分钟内动态
-    # recent_items = filter_half_hour_dynamics(all_items)
-    # if not recent_items:
-    #     print("近30分钟无新动态，不推送通知")
-    #     sys.exit(0)
 
-    # 5. 构建推送内容（和你原输出格式完全一致）
-    # content = build_push_content(recent_items)
     content = build_push_content(all_recent_items)
     title = "B站动态更新提醒"
     full_msg = f"{title}\n\n{content}"
     print(full_msg)
 
-    # 6. 遍历所有 bark_key 推送
+    # 遍历所有 bark_key 推送
     success_count = 0
     fail_count = 0
     for key in bark_keys:
@@ -219,5 +215,4 @@ if __name__ == '__main__':
             success_count += 1
         else:
             fail_count += 1
-
     print(f"\n推送完成，成功：{success_count}，失败：{fail_count}")
